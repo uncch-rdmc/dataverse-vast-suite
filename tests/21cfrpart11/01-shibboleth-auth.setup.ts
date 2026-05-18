@@ -2,7 +2,7 @@ import { test as setup, expect } from "@playwright/test";
 import * as userData from "../../sensitive-data/user.json";
 import fs from "fs";
 
-const authFile = "playwright/.auth/user.json";
+const authFile = "playwright/.auth/21cfr-user.json.json";
 
 setup("authenticate only if needed", async ({ page }) => {
   if (fs.existsSync(authFile)) {
@@ -11,7 +11,7 @@ setup("authenticate only if needed", async ({ page }) => {
       .addCookies(JSON.parse(fs.readFileSync(authFile)).cookies);
   }
 
-  await page.goto("");
+  await page.goto("/");
 
   const loginButton = page.getByRole("link", { name: "Log In", exact: true });
 

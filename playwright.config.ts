@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+const process = (globalThis as any).process;
 
 /**
  * Read environment variables from file.
@@ -30,9 +31,6 @@ export default defineConfig({
     // Sets the default viewport size for all tests
     viewport: { width: 1920, height: 1080 },
 
-    /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: "https://hpo-dataverse-staging.rdmc.unc.edu/",
-
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on",
 
@@ -53,46 +51,49 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
-    { name: "setup", testMatch: /.*\.setup\.ts/ },
+    /* =========================================================
+       1. 21 CFR Part 11 Suite (No stealth needed)
+       ========================================================= */
     {
-      name: "chromium",
+      name: "setup-21cfr",
+      testMatch: /21cfrpart11\/.*\.setup\.ts/,
+      use: {
+        baseURL: process.env.BASE_URL_21CFR, // <-- Add this here
+      },
+    },
+    {
+      name: "21cfrpart11",
+      testMatch: /21cfrpart11\/.*\.spec\.ts/, // Only run specs in this folder
       use: {
         browserName: "chromium",
         channel: "chrome",
-        storageState: "playwright/.auth/user.json",
+        baseURL: process.env.BASE_URL_21CFR, // <-- 21CFR Base URL
+        storageState: "playwright/.auth/21cfr-user.json", // Separate auth file
       },
-      dependencies: ["setup"],
+      dependencies: ["setup-21cfr"],
     },
 
-    // {
-    //   name: 'firefox',
-    //   use: { browserName: 'firefox' },
-    // },
-
-    // {
-    //   name: 'webkit',
-    //   use: { browserName: 'webkit' },
-    // },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
+    /* =========================================================
+       2. Standard Suite (Uses Cloakbrowser in setup)
+       ========================================================= */
+    {
+      name: "setup-standard",
+      testMatch: /standard\/.*\.setup\.ts/,
+      use: {
+        baseURL: process.env.BASE_URL_STANDARD,
+      },
+    },
+    {
+      name: "standard",
+      testMatch: /standard\/.*\.spec\.ts/, // Only run specs in this folder
+      use: {
+        browserName: "chromium",
+        channel: "chrome",
+        baseURL: process.env.BASE_URL_STANDARD, // <-- Standard Base URL
+        storageState: "playwright/.auth/standard-user.json", // Separate auth file
+      },
+      dependencies: ["setup-standard"],
+    },
   ],
 
   /* Run your local dev server before starting the tests */

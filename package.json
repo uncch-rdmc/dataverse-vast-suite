@@ -18,6 +18,10 @@
   "homepage": "https://github.com/uncch-rdmc/unified-playwright-user-testing#readme",
   "devDependencies": {
     "@playwright/test": "^1.58.2",
-    "@types/node": "^25.4.0"
+    "@types/node": "^25.9.0"
+  },
+  "dependencies": {
+    "cloakbrowser": "^0.3.28",
+    "typescript": "^6.0.3"
   }
 }
