@@ -1,11 +1,14 @@
-import { test as setup, expect } from "@playwright/test";
-import * as userData from "../../sensitive-data/user.json";
-import fs from "fs";
+import { test as setup } from "@playwright/test";
 
-const authFile = "playwright/.auth/standard-user.json";
+setup("visit sites and quit", async () => {
+  // 1. Grab the URL from the command line environment variable
+  const targetUrl = process.env.BASE_URL_STANDARD;
 
-setup("authenticate only if needed", async () => {
-  // 1. Dynamically import cloakbrowser here
+  if (!targetUrl) {
+    throw new Error("BASE_URL_STANDARD environment variable is missing!");
+  }
+
+  // 2. Dynamically import cloakbrowser
   const { launch } = await import("cloakbrowser");
 
   const browser = await launch({
@@ -21,63 +24,22 @@ setup("authenticate only if needed", async () => {
     },
   });
 
-  // ... rest of your code remains exactly the same
-
-  // // 3. Manually start tracing (since your config has trace: "on")
-  // await context.tracing.start({
-  //   screenshots: true,
-  //   snapshots: true,
-  //   sources: true,
-  // });
-
   const page = await context.newPage();
 
-  if (fs.existsSync(authFile)) {
-    await context.addCookies(JSON.parse(fs.readFileSync(authFile)).cookies);
-  }
-
-  // 4. Use the baseURL defined in your config
-  // await page.goto("https://dataverse-staging.rdmc.unc.edu/");
-
-  await page.goto("https://dataverse-staging.rdmc.unc.edu/dataverse/unc");
+  // 3. Visit the two specific sites using the environment variable
+  // Using the URL constructor ensures paths are joined correctly regardless of trailing slashes
+  await page.goto(new URL("dataverse/unc", targetUrl).toString());
   await page.goto(
-    "https://dataverse-staging.rdmc.unc.edu/dataset.xhtml?persistentId=doi:10.33563/FK2/QEAPZL",
+    new URL(
+      "dataset.xhtml?persistentId=doi:10.33563/FK2/QEAPZL",
+      targetUrl,
+    ).toString(),
   );
 
-  const loginButton = page.getByRole("link", { name: "Log In", exact: true });
+  // 4. Navigate back to the homepage
+  await page.goto(targetUrl);
 
-  if (await loginButton.isHidden()) {
-    console.log("Already logged in. Skipping 2FA.");
-
-    // Stop tracing and close context/browser cleanly
-    await context.tracing.stop({ path: "test-results/setup-trace.zip" });
-    await context.close(); // Required to finalize video saving
-    await browser.close();
-    return;
-  }
-
-  console.log("Not logged in. Proceeding with authentication.");
-  await loginButton.click({ force: true });
-  await page
-    .locator("#idpSelectSelector")
-    .selectOption("https://sso.unc.edu/idp");
-  await page.getByRole("button", { name: "Continue" }).click({ force: true });
-  await page.locator("#username").fill(userData.username);
-  await page.locator("#nextBtn").click();
-  await page.locator("#password").fill(userData.password);
-  await page.locator("#submitBtn").click();
-
-  await expect(page).toHaveURL(/duosecurity/);
-  await page.getByText("Yes").click();
-  await expect(page).toHaveURL(/dataverse\.xhtml/);
-
-  // 5. Save the fresh session
-  await context.storageState({ path: authFile });
-
-  // 6. Stop tracing and save the zip file
-  await context.tracing.stop({ path: "test-results/setup-trace.zip" });
-
-  // 7. Close context (saves video) and browser
+  // 5. Close context (saves video) and browser
   await context.close();
   await browser.close();
 });
