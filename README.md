@@ -1,5 +1,5 @@
 # Dataverse VAST Suite
-**Validation and Automation Stealth Testing**
+**Versatile Automated Synthetic Testing**
 
 Welcome to the Dataverse VAST Suite. This repository serves as the centralized, enterprise-grade end-to-end (E2E) testing framework for IQSS Dataverse and its ecosystem integrations. 
 
